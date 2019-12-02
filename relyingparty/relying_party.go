@@ -6,13 +6,15 @@ import (
 
 // RelyingParty checks access to endpoint by access_token.
 type RelyingParty struct {
-	cfg *sfConfig
+	cfg *rpConfig
 }
 
 // New creates a new RelyingParty.
 func New(e config.ExtraConfig) (*RelyingParty, error) {
+	// TODO initialize MW.
 
+	// common config
 	return &RelyingParty{
-		cfg: getSFConfig(e),
+		cfg: getRpConfig(e),
 	}, nil
 }

@@ -20,7 +20,7 @@ func TestSelfHostMiddleware(t *testing.T) {
 
 	sf := &RelyingParty{
 		//logger: liblog.New("testApp", liblog.Config{Level: "debug"}),
-		cfg: &sfConfig{
+		cfg: &rpConfig{
 			AuthServerURI:         "http://test.com",
 			AuthorizationEndpoint: "/auth",
 			TokenEndpoint:         "/token",
@@ -45,7 +45,7 @@ func TestSelfHostMiddleware(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			router := gin.Default()
-			router.GET(tt.path, newEndpointSelfHostMw(sf)(nil))
+			router.GET(tt.path, newEndpointRelyingPartyMw(sf)(nil))
 			w := performRequest(router, "GET", tt.path)
 
 			assert.EqualValues(t, tt.wantCode, w.Code)
