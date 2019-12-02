@@ -1,8 +1,8 @@
 package relyingparty
 
 import (
-	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/devopsfaith/krakend/config"
@@ -11,29 +11,27 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
-	"net/http"
 )
 
 const (
 	namespace           = "github.com/ihippik/krakend-mw/relyingparty"
 	HeaderAuthorization = "Authorization"
 	HeaderUserID        = "User-Id"
+	TokenType           = "Bearer"
 )
 
 type EndpointMw func(gin.HandlerFunc) gin.HandlerFunc
-
-var unauthorizedErr = errors.New("unauthorized")
 
 // NewHandlerFactory builds a oauth2 wrapper over the received handler factory.
 // Run for each endpoints.
 func NewHandlerFactory(next krakendgin.HandlerFactory, rp *RelyingParty) krakendgin.HandlerFactory {
 	return func(remote *config.EndpointConfig, p proxy.Proxy) gin.HandlerFunc {
 		handlerFunc := next(remote, p)
-		_, ok := remote.ExtraConfig[namespace]
+		eCfg, ok := remote.ExtraConfig[namespace]
 		if !ok {
 			return handlerFunc
 		}
-
+		rp.endpointCfg = getEpConfig(eCfg)
 		return newEndpointRelyingPartyMw(rp)(handlerFunc)
 	}
 }
@@ -44,17 +42,15 @@ func newEndpointRelyingPartyMw(rp *RelyingParty) EndpointMw {
 	return func(next gin.HandlerFunc) gin.HandlerFunc {
 		return func(c *gin.Context) {
 			userToken := c.GetHeader(HeaderAuthorization)
-
 			if len(userToken) == 0 {
 				logrus.Warnln("empty user token")
-				_ = c.AbortWithError(http.StatusUnauthorized, unauthorizedErr)
+				c.AbortWithStatusJSON(http.StatusUnauthorized, newErr(invalidToken, "token not exists"))
 				return
 			}
-
 			items := strings.Split(userToken, " ")
-			if len(items) != 2 {
+			if len(items) != 2 || items[0] != TokenType {
 				logrus.Warnln("invalid token")
-				_ = c.AbortWithError(http.StatusUnauthorized, unauthorizedErr)
+				c.AbortWithStatusJSON(http.StatusUnauthorized, newErr(invalidToken, "token is malformed"))
 				return
 			}
 
@@ -66,25 +62,51 @@ func newEndpointRelyingPartyMw(rp *RelyingParty) EndpointMw {
 			})
 			if err != nil {
 				logrus.WithError(err).Warnln("parse token err")
-				_ = c.AbortWithError(http.StatusUnauthorized, unauthorizedErr)
+				c.AbortWithStatusJSON(http.StatusUnauthorized, tokenExpiredErr)
 				return
 			}
 
 			if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 				userID, ok := claims["user_id"].(string)
 				if !ok {
-					logrus.Warnln("invalid user id")
-					_ = c.AbortWithError(http.StatusUnauthorized, unauthorizedErr)
+					logrus.Warnln("user id in claims not exist")
+					c.AbortWithStatusJSON(http.StatusUnauthorized, invalidUserIDErr)
+					return
+				}
+				userRole, ok := claims["user_role"].(string)
+				if !ok {
+					logrus.Warnln("user role in claims not exist")
+					c.AbortWithStatusJSON(http.StatusUnauthorized, invalidUserRoleErr)
+					return
+				}
+				if !matchRoles(userRole, rp.endpointCfg.Roles) {
+					logrus.WithField("role", userRole).Warnln("access denied")
+					c.AbortWithStatusJSON(http.StatusForbidden, accessDenied)
 					return
 				}
 				c.Request.Header.Set(HeaderUserID, userID)
 			} else {
 				logrus.WithError(err).Warnln("claims err")
-				_ = c.AbortWithError(http.StatusUnauthorized, unauthorizedErr)
+				c.AbortWithStatusJSON(
+					http.StatusUnauthorized,
+					newErr(
+						invalidTokenClaims,
+						err.Error(),
+					),
+				)
 				return
 			}
-
 			next(c)
 		}
 	}
+}
+
+// matchRoles looking for matching roles
+func matchRoles(userRole string, acceptRoles []string) bool {
+	for _, r := range acceptRoles {
+		if r == userRole {
+			return true
+		}
+	}
+	return false
 }

@@ -6,7 +6,8 @@ import (
 
 // RelyingParty checks access to endpoint by access_token.
 type RelyingParty struct {
-	cfg *rpConfig
+	cfg         *rpConfig
+	endpointCfg *epConfig
 }
 
 // New creates a new RelyingParty.
