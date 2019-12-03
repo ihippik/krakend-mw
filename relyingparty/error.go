@@ -29,17 +29,13 @@ var (
 		ErrMsg: "user role not exists",
 	}
 
-	tokenNotExists = &err{
-		Code:   invalidToken,
-		ErrMsg: "invalid user id err",
-	}
-
 	accessDenied = &err{
 		Code:   roleNotMatch,
 		ErrMsg: "access for the role denied",
 	}
 )
 
+// newErr create new err with specific code & msg.
 func newErr(code string, msg string) *err {
 	return &err{
 		Code:   code,
