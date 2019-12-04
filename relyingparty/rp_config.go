@@ -7,7 +7,7 @@ import (
 
 // rpConfig is the custom config struct containing the params for the Auth Checker.
 type rpConfig struct {
-	TokenSecret string `json:"token_secret"`
+	TokenSecret string `mapstructure:"token_secret"`
 }
 
 type epConfig struct {
@@ -24,11 +24,11 @@ var rpZeroCfg = rpConfig{}
 // getRpConfig parses the extra config for the RP.
 func getRpConfig(e config.ExtraConfig) (*rpConfig, error) {
 	cfg := new(rpConfig)
-	v, ok := e[rpNamespace]
+	input, ok := e[rpNamespace]
 	if !ok {
 		return &rpZeroCfg, nil
 	}
-	err := mapstructure.Decode(v, cfg)
+	err := mapstructure.Decode(input, cfg)
 	if err != nil {
 		return &rpZeroCfg, err
 	}

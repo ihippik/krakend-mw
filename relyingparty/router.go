@@ -66,7 +66,7 @@ func newEndpointRelyingPartyMw(cfg *epConfig, rp *RelyingParty) EndpointMw {
 			})
 			if err != nil {
 				logrus.WithError(err).Warnln("parse token err")
-				c.AbortWithStatusJSON(http.StatusUnauthorized, tokenExpiredErr)
+				c.AbortWithStatusJSON(http.StatusUnauthorized, newErr(invalidToken, err.Error()))
 				return
 			}
 
