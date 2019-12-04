@@ -26,12 +26,17 @@ type EndpointMw func(gin.HandlerFunc) gin.HandlerFunc
 // Run for each endpoints.
 func NewHandlerFactory(next krakendgin.HandlerFactory, rp *RelyingParty) krakendgin.HandlerFactory {
 	return func(remote *config.EndpointConfig, p proxy.Proxy) gin.HandlerFunc {
+		var err error
 		handlerFunc := next(remote, p)
 		eCfg, ok := remote.ExtraConfig[namespace]
 		if !ok {
 			return handlerFunc
 		}
-		rp.endpointCfg = getEpConfig(eCfg)
+		rp.endpointCfg, err = getEpConfig(eCfg)
+		if err != nil {
+			logrus.WithError(err).Errorln("getEpConfig error")
+			return handlerFunc
+		}
 		return newEndpointRelyingPartyMw(rp)(handlerFunc)
 	}
 }

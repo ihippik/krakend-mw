@@ -1,6 +1,6 @@
 package relyingparty
 
-type err struct {
+type Err struct {
 	Code   string `json:"code"`
 	ErrMsg string `json:"errMessage"`
 }
@@ -14,30 +14,30 @@ const (
 
 // custom errors.
 var (
-	tokenExpiredErr = &err{
+	tokenExpiredErr = &Err{
 		Code:   tokenExpired,
 		ErrMsg: "token expired",
 	}
 
-	invalidUserIDErr = &err{
+	invalidUserIDErr = &Err{
 		Code:   invalidTokenClaims,
 		ErrMsg: "invalid user id err",
 	}
 
-	invalidUserRoleErr = &err{
+	invalidUserRoleErr = &Err{
 		Code:   invalidTokenClaims,
 		ErrMsg: "user role not exists",
 	}
 
-	accessDenied = &err{
+	accessDenied = &Err{
 		Code:   roleNotMatch,
 		ErrMsg: "access for the role denied",
 	}
 )
 
 // newErr create new err with specific code & msg.
-func newErr(code string, msg string) *err {
-	return &err{
+func newErr(code string, msg string) *Err {
+	return &Err{
 		Code:   code,
 		ErrMsg: msg,
 	}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/devopsfaith/krakend/config"
+	"github.com/mitchellh/mapstructure"
 )
 
 // rpConfig is the custom config struct containing the params for the Auth Checker.
@@ -41,21 +42,11 @@ func getRpConfig(e config.ExtraConfig) *rpConfig {
 }
 
 // getRpConfig parses the extra config for the Endpoint.
-func getEpConfig(extra interface{}) *epConfig {
+func getEpConfig(extra interface{}) (*epConfig, error) {
 	cfg := new(epConfig)
-	var roles []string
-	e := extra.(map[string]interface{})
-	tmp, ok := e["roles"]
-	if !ok {
-		return cfg
+	err := mapstructure.Decode(extra, cfg)
+	if err != nil {
+		return nil, err
 	}
-	rolesTmp, ok := tmp.([]interface{})
-	if !ok {
-		return cfg
-	}
-	for _, val := range rolesTmp {
-		roles = append(roles, val.(string))
-	}
-	cfg.Roles = roles
-	return cfg
+	return cfg, nil
 }
