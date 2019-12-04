@@ -32,17 +32,17 @@ func NewHandlerFactory(next krakendgin.HandlerFactory, rp *RelyingParty) krakend
 		if !ok {
 			return handlerFunc
 		}
-		rp.endpointCfg, err = getEpConfig(eCfg)
+		cfg, err := getEpConfig(eCfg)
 		if err != nil {
 			logrus.WithError(err).Errorln("getEpConfig error")
 			return handlerFunc
 		}
-		return newEndpointRelyingPartyMw(rp)(handlerFunc)
+		return newEndpointRelyingPartyMw(cfg, rp)(handlerFunc)
 	}
 }
 
 // newEndpointRelyingPartyMw is the handler middlware that implements token-based auth.
-func newEndpointRelyingPartyMw(rp *RelyingParty) EndpointMw {
+func newEndpointRelyingPartyMw(cfg *epConfig, rp *RelyingParty) EndpointMw {
 	return func(next gin.HandlerFunc) gin.HandlerFunc {
 		return func(c *gin.Context) {
 			userToken := c.GetHeader(HeaderAuthorization)
@@ -83,7 +83,7 @@ func newEndpointRelyingPartyMw(rp *RelyingParty) EndpointMw {
 					c.AbortWithStatusJSON(http.StatusUnauthorized, invalidUserRoleErr)
 					return
 				}
-				if !matchRoles(userRole, rp.endpointCfg.Roles) {
+				if !matchRoles(userRole, cfg.Roles) {
 					logrus.WithField("role", userRole).Warnln("access denied")
 					c.AbortWithStatusJSON(http.StatusForbidden, accessDenied)
 					return
