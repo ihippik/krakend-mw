@@ -1,4 +1,4 @@
 # KrakenD middleware
 
-* Relying party
+* Relying party (Token-Based Authentication with user roles)
 
