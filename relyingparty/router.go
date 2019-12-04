@@ -41,8 +41,7 @@ func NewHandlerFactory(next krakendgin.HandlerFactory, rp *RelyingParty) krakend
 	}
 }
 
-// newEndpointRelyingPartyMw is the handler middlware that represents endpoints of
-// gateway itself.
+// newEndpointRelyingPartyMw is the handler middlware that implements token-based auth.
 func newEndpointRelyingPartyMw(rp *RelyingParty) EndpointMw {
 	return func(next gin.HandlerFunc) gin.HandlerFunc {
 		return func(c *gin.Context) {
