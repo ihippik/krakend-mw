@@ -1,8 +1,6 @@
 package relyingparty
 
 import (
-	"fmt"
-
 	"github.com/devopsfaith/krakend/config"
 	"github.com/mitchellh/mapstructure"
 )
@@ -24,21 +22,17 @@ const rpNamespace = "github_com/ihippik/krakend-mw/relyingparty"
 var rpZeroCfg = rpConfig{}
 
 // getRpConfig parses the extra config for the RP.
-func getRpConfig(e config.ExtraConfig) *rpConfig {
+func getRpConfig(e config.ExtraConfig) (*rpConfig, error) {
+	cfg := new(rpConfig)
 	v, ok := e[rpNamespace]
 	if !ok {
-		return &rpZeroCfg
+		return &rpZeroCfg, nil
 	}
-	tmp, ok := v.(map[string]interface{})
-	if !ok {
-		return &rpZeroCfg
+	err := mapstructure.Decode(v, cfg)
+	if err != nil {
+		return &rpZeroCfg, err
 	}
-
-	cfg := &rpConfig{}
-	if v, ok := tmp["token_secret"]; ok {
-		cfg.TokenSecret = fmt.Sprintf("%v", v)
-	}
-	return cfg
+	return cfg, nil
 }
 
 // getRpConfig parses the extra config for the Endpoint.
